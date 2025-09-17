@@ -9,9 +9,9 @@ admin_role_required = require_roles(["admin"])
 guard_role_required = require_roles(["guard"])
 common_role_required = require_roles(["employee", "guard"])
 
-router_admin = APIRouter(tags=["Admin - Parking Lot Management"])
-router_guard = APIRouter(tags=["Parking - Guard"])
-router = APIRouter(tags=["Parking"])
+router_admin = APIRouter(tags=["Admin - Parking Lot Management"], dependencies=[Depends(admin_role_required)])
+router_guard = APIRouter(tags=["Parking - Guard"], dependencies=[Depends(guard_role_required)])
+router = APIRouter(tags=["Parking"], dependencies=[Depends(common_role_required)])
 
 
 def get_parking_lot_by_code(code: str) -> FullParkingLotResponse:
@@ -23,13 +23,13 @@ def get_parking_lot_by_code(code: str) -> FullParkingLotResponse:
         raise HTTPException(status_code=404, detail="Parking lot not found")
     return FullParkingLotResponse(**lot)
 
-@router_admin.get("/parking_lots", dependencies=[Depends(admin_role_required)])
+@router_admin.get("/parking_lots", response_model=List[FullParkingLotResponse])
 def get_parking_lots(current_user=Depends(get_current_user)):
     response = fetch_all(table="parking_lot")
     if response.get("error"):
         raise HTTPException(status_code=500, detail=response["error"])
 
-    return {"parking_lot": response.get("data", [])}
+    return response.get("data", [])
 
 @router_admin.post("/add_parking_lot", dependencies=[Depends(admin_role_required)])
 def add_parking_lot(parking_lot: ParkingLotDetails, current_user=Depends(get_current_user)):
@@ -78,7 +78,7 @@ def update_parking_lot(parking_lot: ParkingLotUpdateRequest, current_user=Depend
         raise HTTPException(status_code=500, detail=response.get("error"))
     return {"message": f"Parking lot: {parking_lot.code} successfully updated with {sanitized_data}"}
 
-@router.get("/availability", dependencies=[Depends(common_role_required)], response_model=List[ParkingAvailabilityResponse])
+@router.get("/availability", response_model=List[ParkingAvailabilityResponse])
 def check_availability(current_user=Depends(get_current_user)):
     response = fetch_all(table="parking_lot")
     if response.get("error"):
@@ -89,7 +89,7 @@ def check_availability(current_user=Depends(get_current_user)):
         data_set.append(ParkingAvailabilityResponse(**lot))
     return data_set
 
-@router_guard.post("/update_availability", dependencies=[Depends(guard_role_required)], response_model=UpdateAvailabilityResponse)
+@router_guard.post("/update_availability", response_model=UpdateAvailabilityResponse)
 def update_availability(req: UpdateAvailabilityRequest, current_user=Depends(get_current_user)):
     # Fetch current parking lot details
     lot = get_parking_lot_by_code(req.parking_lot_code)
@@ -136,7 +136,7 @@ def update_availability(req: UpdateAvailabilityRequest, current_user=Depends(get
     })
     return UpdateAvailabilityResponse(**final_response)
 
-@router.post("/bulk_update", dependencies=[Depends(guard_role_required)], response_model=UpdateAvailabilityResponse)
+@router_guard.post("/bulk_update", response_model=UpdateAvailabilityResponse)
 def bulk_update_availability(req: BulkUpdateRequest, current_user=Depends(get_current_user)):
     # Fetch current parking lot details
     lot = get_parking_lot_by_code(req.parking_lot_code)
