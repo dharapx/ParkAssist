@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from routers import user, admin, parking
 
 origins = [
-    "https://toddler-game-rho.vercel.app",
+    "https://parkassistapi.dharapx.duckdns.org",
     "http://localhost:3000",  # for local development
 ]
 
