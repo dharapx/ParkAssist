@@ -6,6 +6,7 @@ from routers import user, admin, parking
 origins = [
     "https://parkassistapi.dharapx.duckdns.org",
     "http://localhost:3000",  # for local development
+    "http://localhost:8000",  # for local development
 ]
 
 def custom_openapi():

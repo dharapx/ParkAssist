@@ -71,29 +71,28 @@ class userModResponse(BaseModel):
 # ----------------------------------------
 # Parking Lot Management Schemas
 # ----------------------------------------
-class ParkingLotDetails(BaseModel):
+class BaseParkingLot(BaseModel):
     code: str
     name: str
     type: str
+
+class ParkingLotDetails(BaseParkingLot):
     capacity: int
 
-class ParkingLotResponse(BaseModel):
-    code: str
-    name: str
-    type: str
-    capacity: int
+class ParkingLotResponse(ParkingLotDetails):
     created_at: str
     updated_at: Optional[str] = None
 
+class FullParkingLotResponse(ParkingLotResponse):
+    availability: int
+    
 class ParkingLotUpdateRequest(BaseModel):
     code: str
     name: Optional[str] = None
     type: Optional[str] = None
     capacity: Optional[int] = None
 
-class ParkingAvailabilityResponse(BaseModel):
-    name: str
-    type: str
+class ParkingAvailabilityResponse(BaseParkingLot):
     availability: int
     updated_at: str
 
@@ -101,9 +100,10 @@ class UpdateAvailabilityRequest(BaseModel):
     parking_lot_code: str
     event_type: Literal["in", "out"]
 
-class UpdateAvailabilityResponse(BaseModel):
-    name: str
-    type: str
-    availability: int
-    message: str
-    updated_at: str
+class UpdateAvailabilityResponse(ParkingAvailabilityResponse):
+    message: Optional[str] = None
+
+# Request model
+class BulkUpdateRequest(BaseModel):
+    parking_lot_code: str
+    new_availability: int
